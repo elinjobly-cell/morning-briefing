@@ -1,4 +1,4 @@
-import requests
+⁸import requests
 import os
 from datetime import datetime
 
@@ -9,7 +9,7 @@ TG_CHAT_ID = os.environ.get('TELEGRAM_CHAT_ID', '')
 def get_briefing():
     today = datetime.now().strftime("%Y년 %m월 %d일")
     prompt = f"""오늘은 {today}입니다.
-한국 부동산 담보대출(4억, 3.9%) 보유한 은행 IT 인프라 담당자를 위한
+한국 부동산 송도 풍림아이원 1단지 담보대출(4억, 3.9%) 보유한 직업은 은행 IT 인프라 담당자 여자, 싱글맘 남아 2016년생 아이 1명을 둔 여자를 위한
 오전 7시 투자 브리핑을 작성해주세요.
 
 다음 5개 섹션으로 작성:
@@ -18,7 +18,7 @@ def get_briefing():
 └ 오늘 꼭 알아야 할 투자 이슈 3가지
 
 🏠 부동산·금리
-└ 주담대 금리, 부동산 시장 동향, 4억 대출자 관점 시사점
+└ 주담대 금리, 부동산 시장 동향, 송도 풍림아이원 1단지, 4억 대출자 관점 시사점, 잠실 르엘 (체무자의 유일 자산으로 등기시점 및 기타 뉴스)
 
 📈 주식·ETF
 └ 국내외 주요 지수, 주목 섹터, 투자 액션
