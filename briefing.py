@@ -9,12 +9,15 @@ TG_CHAT_ID = os.environ.get('TELEGRAM_CHAT_ID', '').strip()
 NEWS_KEY = os.environ.get('NEWSAPI_KEY', '').strip()
 
 def get_real_news():
-    # 연합뉴스(yna.co.kr)와 한국경제(hankyung.com)에서 경제 뉴스를 확실히 가져옵니다.
-    url = f"https://newsapi.org/v2/everything?q=경제 OR 금리 OR 부동산&domains=yna.co.kr,hankyung.com&language=ko&sortBy=publishedAt&pageSize=10&apiKey={NEWS_KEY}"
+    # 최대한 넓은 범위로 검색 (뉴스 소스 필터 제거하여 데이터 수집 확률 높임)
+    url = f"https://newsapi.org/v2/everything?q=경제 OR 부동산&language=ko&sortBy=publishedAt&pageSize=5&apiKey={NEWS_KEY}"
     try:
-        res = requests.get(url).json()
+        res = requests.get(url, timeout=10).json()
         articles = res.get('articles', [])
-        # 여기서 링크와 제목을 아예 문자열로 딱 붙여서 만듭니다.
+        
+        if not articles:
+            return "현재 실시간 뉴스 데이터가 없습니다."
+            
         news_formatted = "\n".join([f"제목: {a['title']}\n링크: {a['url']}\n" for a in articles])
         return news_formatted
     except Exception as e:
@@ -22,17 +25,19 @@ def get_real_news():
 
 def get_briefing():
     news_data = get_real_news()
+    today = datetime.now().strftime("%Y년 %m월 %d일")
     
-    # 프롬프트: '창작' 금지, '제공된 데이터' 사용 강제
+    # AI가 개인 정보를 생성하지 못하도록 강력하게 프롬프트 제약
     prompt = (
-        "아래 제공된 [뉴스 리스트]만 사용하여 경제 브리핑을 작성하세요.\n"
-        "지시사항:\n"
-        "1. 제공된 [링크]가 있는 기사만 언급하고, 제목과 링크를 그대로 붙여넣으세요.\n"
-        "2. 절대 가짜 링크를 생성하지 마세요.\n"
-        "3. 개인 신상 정보는 일절 언급하지 마세요.\n\n"
-        "[뉴스 리스트]\n"
+        f"오늘 날짜: {today}\n"
+        "당신은 경제/금융 전문 뉴스 브리퍼입니다.\n"
+        "아래 [뉴스 데이터]만 사용하여 브리핑을 작성하세요. "
+        "만약 뉴스 데이터가 없거나 부족하다면 '현재 뉴스 업데이트 중입니다'라고 답변하세요.\n"
+        "필수 규칙: 절대 사용자의 개인 신상(직장, 거주지, 대출 등)을 언급하지 마세요. 오직 경제 뉴스 중심입니다.\n\n"
+        "[뉴스 데이터]\n"
         f"{news_data}\n\n"
-        "위 뉴스를 바탕으로 7개 섹션(핵심/부동산/주식/IT/글로벌/재테크/기술)별로 요약하세요."
+        "다음 7개 섹션으로 요약하세요.\n"
+        "1. [핵심 경제 이슈] 2. [부동산/금리 시장] 3. [주식/ETF] 4. [IT/인프라/GCP] 5. [글로벌 경제] 6. [생활 재테크] 7. [기술 트렌드]"
     )
     
     headers = {"Authorization": f"Bearer {GROQ_KEY}", "Content-Type": "application/json"}
@@ -41,15 +46,18 @@ def get_briefing():
     res = requests.post("https://api.groq.com/openai/v1/chat/completions", headers=headers, json=body)
     
     if res.status_code != 200:
-        raise Exception(f"API 오류: {res.text}")
+        return f"브리핑 생성 중 오류 발생: {res.text}"
     
     return res.json()['choices'][0]['message']['content']
 
 def send_telegram(text):
     message = f"☀️ <b>[경제 뉴스 브리핑]</b>\n📅 {datetime.now().strftime('%Y.%m.%d')}\n\n{text}"
-    requests.post(f"https://api.telegram.org/bot{TG_TOKEN}/sendMessage", 
+    res = requests.post(f"https://api.telegram.org/bot{TG_TOKEN}/sendMessage", 
                   json={"chat_id": TG_CHAT_ID, "text": message, "parse_mode": "HTML"})
+    
+    if res.status_code != 200:
+        print(f"텔레그램 전송 실패: {res.text}")
 
 if __name__ == "__main__":
-    briefing = get_briefing()
-    send_telegram(briefing)
+    briefing_text = get_briefing()
+    send_telegram(briefing_text)
