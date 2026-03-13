@@ -2,18 +2,16 @@ import requests
 import os
 from datetime import datetime
 
-# 환경 변수 (GitHub Secrets에서 가져옵니다)
-GROQ_KEY = os.environ.get('GROQ_API_KEY', '')
-TG_TOKEN = os.environ.get('TELEGRAM_TOKEN', '')
-TG_CHAT_ID = os.environ.get('TELEGRAM_CHAT_ID', '')
+# 환경 변수 가져오기
+GROQ_KEY = os.environ.get('GROQ_API_KEY', '').strip() # .strip() 추가로 앞뒤 공백 제거
+TG_TOKEN = os.environ.get('TELEGRAM_TOKEN', '').strip()
+TG_CHAT_ID = os.environ.get('TELEGRAM_CHAT_ID', '').strip()
 
 def get_briefing():
     today = datetime.now().strftime("%Y년 %m월 %d일")
-    # 제목과 섹션을 더 명확하게 보완했습니다.
     prompt = (
         f"오늘은 {today}입니다. 싱글맘, 2016년생 자녀, 송도 풍림아이원 거주(대출4억, 3.9%), "
-        "잠실 르엘 관심, 씨티은행 IT 인프라 담당자(VMware/NAS/Wintel), GCP 자격증 준비 중인 "
-        "투자자를 위한 '매일 아침 금융/IT 인사이트' 브리핑입니다.\n\n"
+        "잠실 르엘 관심, 씨티은행 IT 인프라 담당자, GCP 자격증 준비 중인 투자자를 위한 브리핑.\n\n"
         "다음 7개 섹션으로 구성해 주세요:\n"
         "1. [핵심] 오늘의 시장 한 줄 평\n"
         "2. [부동산] 송도/잠실 이슈 및 등기 관련\n"
@@ -29,18 +27,20 @@ def get_briefing():
     body = {"model": "llama-3.3-70b-versatile", "messages": [{"role": "user", "content": prompt}], "max_tokens": 2000}
     
     res = requests.post("https://api.groq.com/openai/v1/chat/completions", headers=headers, json=body)
+    
     if res.status_code != 200:
-        raise Exception(f"Groq API 연결 실패: {res.text}")
+        raise Exception(f"Groq API 연결 실패 (상태코드 {res.status_code}): {res.text}")
+    
     return res.json()['choices'][0]['message']['content']
 
 def send_telegram(text):
-    # 제목을 더 눈에 띄게 개선
-    message = f"☀️ <b>오늘의 맞춤형 투자 브리핑 ({datetime.now().strftime('%m.%d')})</b>\n\n{text}"
+    message = f"☀️ <b>[오늘의 맞춤형 투자 브리핑]</b>\n📅 {datetime.now().strftime('%Y.%m.%d')}\n\n{text}\n\n💡 <i>AI 자동 생성 | 투자 참고용</i>"
     
     res = requests.post(
         f"https://api.telegram.org/bot{TG_TOKEN}/sendMessage", 
         json={"chat_id": TG_CHAT_ID, "text": message, "parse_mode": "HTML"}
     )
+    
     if res.status_code != 200:
         raise Exception(f"텔레그램 전송 실패: {res.text}")
 
