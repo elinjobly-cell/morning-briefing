@@ -9,14 +9,18 @@ TG_CHAT_ID = os.environ.get('TELEGRAM_CHAT_ID', '').strip()
 NEWS_KEY = os.environ.get('NEWSAPI_KEY', '').strip()
 
 def get_real_news():
-    # 연합뉴스(yna.co.kr)와 한국경제(hankyung.com)로 출처를 제한
+    # 명확하게 연합뉴스(yna.co.kr)와 한국경제(hankyung.com)만 지정
+    # 쿼리는 반도체 및 주요 기업 키워드로 설정
     query = "반도체 OR NVIDIA OR AMD OR SK하이닉스 OR 삼성전자 OR TSMC"
     url = f"https://newsapi.org/v2/everything?q={query}&domains=yna.co.kr,hankyung.com&language=ko&sortBy=publishedAt&pageSize=7&apiKey={NEWS_KEY}"
     
     try:
         res = requests.get(url, timeout=10).json()
         articles = res.get('articles', [])
-        return "\n".join([f"- {a['title']}: {a['url']}" for a in articles]) if articles else None
+        # 기사가 있을 경우에만 포맷팅
+        if articles:
+            return "\n".join([f"- {a['title']}: {a['url']}" for a in articles])
+        return None
     except:
         return None
 
@@ -28,13 +32,14 @@ def get_briefing():
     삼성전자(NAND), 웨스턴디지털(파운드리/NAND), TSMC(패키징), ASE(패키징)
     """
     
+    # 한국어 표준어 유지와 한자/외국어 혼용 금지 제약 포함
     prompt = (
         "당신은 한국의 경제 전문 기자입니다. 반드시 완벽한 한국어(표준어)로만 작성하세요.\n"
         "지시사항:\n"
         "- 한자나 외국어(베트남어 등)를 혼용하지 마세요.\n"
         "- 반드시 자연스러운 한국어 문장으로만 구성하세요.\n"
         "- 뉴스 데이터가 있다면 제목과 [링크]를 포함하고, 데이터가 없다면 시장 상황을 분석하세요.\n"
-        "- 개인 신상 정보는 절대 언급하지 마세요.\n"
+        "- 개인 신상 정보(직장 등)는 절대 언급하지 마세요.\n"
         f"{portfolio_info}\n\n"
         "다음 8개 섹션으로 나누어 작성하세요:\n"
         "1. [핵심 경제 이슈] 2. [부동산/금리] 3. [반도체 및 종목 이슈] 4. [주식/ETF] "
@@ -51,7 +56,7 @@ def get_briefing():
         "model": "llama-3.3-70b-versatile", 
         "messages": [{"role": "user", "content": prompt}], 
         "max_tokens": 2000,
-        "temperature": 0.2  # 답변의 정확성을 위한 낮은 온도 설정
+        "temperature": 0.2  # 답변을 더 보수적이고 정확하게 생성하도록 설정
     }
     
     res = requests.post("https://api.groq.com/openai/v1/chat/completions", headers=headers, json=body)
