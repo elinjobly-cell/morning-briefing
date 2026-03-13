@@ -2,8 +2,11 @@ import requests
 import os
 from datetime import datetime
 
+# 디버깅: 환경 변수 키 확인
+print(f"DEBUG: 키의 첫 4자리: {os.environ.get('GROQ_API_KEY', '')[:4]}") 
+
 # 환경 변수 가져오기
-GROQ_KEY = os.environ.get('GROQ_API_KEY', '').strip() # .strip() 추가로 앞뒤 공백 제거
+GROQ_KEY = os.environ.get('GROQ_API_KEY', '').strip() 
 TG_TOKEN = os.environ.get('TELEGRAM_TOKEN', '').strip()
 TG_CHAT_ID = os.environ.get('TELEGRAM_CHAT_ID', '').strip()
 
