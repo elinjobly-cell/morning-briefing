@@ -26,7 +26,7 @@ def get_briefing():
         "6.오늘의생활팁 2016년생초등학생교육비절약투자팁 싱글맘재테크한줄조언. "
         "각섹션 3~4줄 간결하게. 따뜻하고 실용적인 톤으로 작성.")
 
-    url = "https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=" + GEMINI_KEY
+    url = "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=" + GEMINI_KEY
     res = requests.post(url, json={"contents": [{"parts": [{"text": prompt}]}]})
     data = res.json()
     print("Gemini 응답 확인:", list(data.keys()))
